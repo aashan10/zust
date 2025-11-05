@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zust - Alpine.js Inspired Reactivity</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f8fafc;
+        }
+
+        .component {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .component h2 {
+            margin-top: 0;
+            color: #1e293b;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0.25rem;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        input,
+        select {
+            padding: 0.5rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 4px;
+            margin: 0.25rem;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .todo-item:last-child {
+            border-bottom: none;
+        }
+
+        .todo-text {
+            flex: 1;
+            margin-left: 0.5rem;
+        }
+
+        .todo-text.completed {
+            text-decoration: line-through;
+            color: #64748b;
+        }
+
+        .counter-display {
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            padding: 1rem;
+            background: #f1f5f9;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+
+        .positive {
+            color: #059669;
+        }
+
+        .negative {
+            color: #dc2626;
+        }
+
+        .zero {
+            color: #64748b;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 1rem;
+        }
+
+        .tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab.active {
+            border-bottom-color: #3b82f6;
+            color: #3b82f6;
+            font-weight: 500;
+        }
+
+        .tab-content {
+            min-height: 100px;
+            padding: 1rem 0;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>🚀 Zust Framework Examples</h1>
+        <p>Alpine.js-inspired reactivity with isolated component state</p>
+    </header>
+
+    <!-- Counter Component -->
+    <div class="component" z-state="{
+      count: 0,
+      increment() { this.count++ },
+      decrement() { this.count-- },
+      reset() { this.count = 0 },
+      get displayClass() {
+        if (this.count > 0) return 'positive';
+        if (this.count < 0) return 'negative';
+        return 'zero';
+      }
+    }">
+        <h2>📊 Counter Component</h2>
+        <div class="counter-display" z-bind:class="displayClass">
+            Count: <span z-bind:style="{ fontSize: count > 10 ? '3rem' : '2rem' }" z-text="count"></span>
+        </div>
+
+        <div>
+            <button z-on:click="decrement()">-</button>
+            <button z-on:click="increment()">+</button>
+            <button z-on:click="reset()" z-bind:disabled="count === 0">Reset</button>
+        </div>
+
+        <div style="margin-top: 1rem;">
+            <input z-model="count" type="number" placeholder="Set count directly">
+        </div>
+
+        <p z-show="count !== 0">
+            The count is <strong z-bind:class="displayClass" z-text="count"></strong>
+            <span z-show="count > 0">and positive! 🎉</span>
+            <span z-show="count < 0">and negative 📉</span>
+        </p>
+    </div>
+
+    <!-- Todo List Component -->
+    <div class="component" z-state="{
+      todos: [
+        { id: 1, text: 'Learn Zust framework', completed: false },
+        { id: 2, text: 'Build awesome apps', completed: false }
+      ],
+      newTodo: '',
+      filter: 'all',
+      
+      addTodo() {
+        if (this.newTodo.trim()) {
+          this.todos.push({
+            id: Date.now(),
+            text: this.newTodo.trim(),
+            completed: false
+          });
+          this.newTodo = '';
+        }
+      },
+      
+      toggleTodo(id) {
+        const todo = this.todos.find(t => t.id === id);
+        if (todo) todo.completed = !todo.completed;
+      },
+      
+      removeTodo(id) {
+        this.todos = this.todos.filter(t => t.id !== id);
+      },
+
+      filteredTodos() {
+        switch (this.filter) {
+          case 'active': return this.todos.filter(t => !t.completed);
+          case 'completed': return this.todos.filter(t => t.completed);
+          default: return this.todos;
+        }
+      },
+
+    shouldShow(todo) {
+            switch(this.filter) {
+                case 'all':
+                    return true;
+                case 'completed':
+                    return todo.completed;
+                case 'active':
+                    return !todo.completed;
+            };
+        },
+      
+      get stats() {
+        const total = this.todos.length;
+        const completed = this.todos.filter(t => t.completed).length;
+        const active = total - completed;
+        return { total, completed, active };
+      }
+    }">
+        <h2>✅ Todo List Component</h2>
+
+        <div class="form-group">
+            <input z-model="newTodo" z-on:keyup="$event.key === 'Enter' && addTodo()" placeholder="Add a new todo..."
+                style="width: 70%;">
+            <button z-on:click="addTodo()" z-bind:disabled="!newTodo.trim()">Add Todo</button>
+        </div>
+
+        <div class="tabs">
+            <div class="tab" z-bind:class="{ active: filter === 'all' }" z-on:click="filter = 'all'">
+                All (<span z-text="todos.length"></span>)
+            </div>
+            <div class="tab" z-bind:class="{ active: filter === 'active' }" z-on:click="filter = 'active'">
+                Active (<span z-text="todos.filter(t => !t.completed).length"></span>)
+            </div>
+            <div class="tab" z-bind:class="{ active: filter === 'completed' }" z-on:click="filter = 'completed'">
+                Completed (<span z-text="todos.filter(t => t.completed).length"></span>)
+            </div>
+        </div>
+
+        <div class="tab-content">
+            <div z-show="filteredTodos().length === 0" style="text-align: center; color: #64748b;">
+                <span z-show="filter === 'all'">No todos yet. Add one above! 📝</span>
+                <span z-show="filter === 'active'">No active todos! 🎉</span>
+                <span z-show="filter === 'completed'">No completed todos yet.</span>
+            </div>
+
+            <div z-show="filteredTodos().length > 0">
+                <template z-for="(todo, $index) in filteredTodos()" z-key="todo.id">
+                    <div class="todo-item">
+                        <input type="checkbox" z-model="todo.completed">
+                        <span class="todo-text" z-bind:class="{ completed: todo.completed }" z-text="todo.text"></span>
+                        <button z-on:click="removeTodo(todo.id)"
+                            style="margin-left: auto; background: #dc2626; font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                            ×
+                        </button>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- z-for Examples Component -->
+    <div class="component" z-state="{
+      items: ['Apple', 'Banana', 'Cherry'],
+      users: [
+        { id: 1, name: 'Alice', role: 'Admin' },
+        { id: 2, name: 'Bob', role: 'User' },
+        { id: 3, name: 'Charlie', role: 'Moderator' }
+      ],
+      colors: ['red', 'green', 'blue', 'purple', 'orange'],
+      
+      addItem() {
+        this.items.push(`Item ${this.items.length + 1}`);
+      },
+      
+      removeItem(index) {
+        this.items.splice(index, 1);
+      },
+      
+      addUser() {
+        this.users.push({
+          id: Date.now(),
+          name: `User ${this.users.length + 1}`,
+          role: 'User'
+        });
+      }
+    }">
+        <h2>🔄 z-for Examples</h2>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <!-- Simple list with index -->
+            <div>
+                <h3>Simple List with Index</h3>
+                <button z-on:click="addItem()">Add Item</button>
+                <ul>
+                    <template z-for="(item, $index) in items" z-key="$index">
+                        <li>
+                            <span z-text="$index + 1"></span>. <span z-text="item"></span>
+                            <button z-on:click="removeItem($index)"
+                                style="margin-left: 0.5rem; font-size: 0.75rem;">×</button>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+
+            <!-- Object iteration -->
+            <div>
+                <h3>Object List</h3>
+                <button z-on:click="addUser()">Add User</button>
+                <div>
+                    <template z-for="(user, $index) in users" z-key="user.id">
+                        <div style="padding: 0.5rem; border: 1px solid #e2e8f0; margin: 0.25rem 0; border-radius: 4px;">
+                            <strong z-text="user.name"></strong> -
+                            <span z-text="user.role"
+                                z-bind:style="{ color: user.role === 'Admin' ? '#dc2626' : '#059669' }"></span>
+                            <small style="color: #64748b;">(ID: <span z-text="user.id"></span>)</small>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Color showcase -->
+            <div>
+                <h3>Dynamic Styling</h3>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <template z-for="(color, $index) in colors">
+                        <div z-bind:style="{ 
+                            backgroundColor: color, 
+                            color: 'white', 
+                            padding: '0.5rem 1rem', 
+                            borderRadius: '20px',
+                            fontSize: '0.875rem',
+                            fontWeight: 'bold'
+                        }">
+                            <span z-text="color"></span> (<span z-text="$index"></span>)
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Simple item iteration -->
+            <div>
+                <h3>Simple Items</h3>
+                <p>Total: <span z-text="items.length"></span> items</p>
+                <template z-for="item in items">
+                    <span z-bind:style="{ 
+                        display: 'inline-block',
+                        background: '#f1f5f9', 
+                        padding: '0.25rem 0.5rem', 
+                        margin: '0.25rem',
+                        borderRadius: '4px',
+                        fontSize: '0.875rem'
+                    }" z-text="item"></span>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Component -->
+    <div class="component" z-state="{
+      user: {
+        name: '',
+        email: '',
+        age: 18,
+        country: 'US',
+        notifications: true,
+        theme: 'light'
+      },
+      
+      errors: {},
+      submitted: false,
+      
+      validate() {
+        this.errors = {};
+        
+        if (!this.user.name.trim()) {
+          this.errors.name = 'Name is required';
+        }
+        
+        if (!this.user.email.includes('@')) {
+          this.errors.email = 'Valid email is required';
+        }
+        
+        if (this.user.age < 13) {
+          this.errors.age = 'Must be at least 13 years old';
+        }
+        
+        return Object.keys(this.errors).length === 0;
+      },
+      
+      submitForm() {
+        if (this.validate()) {
+          this.submitted = true;
+          setTimeout(() => { this.submitted = false; }, 3000);
+        }
+      },
+      
+      isValid() {
+        return this.user.name.trim() && 
+               this.user.email.includes('@') && 
+               this.user.age >= 13;
+      }
+    }">
+        <h2>📋 Form Component</h2>
+
+        <form z-on:submit="$event.preventDefault(); submitForm()">
+            <div class="form-group">
+                <label>Name:</label>
+                <input z-model="user.name" type="text" placeholder="Enter your name">
+                <div z-show="errors.name" style="color: #dc2626; font-size: 0.875rem;" z-text="errors.name"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Email:</label>
+                <input z-model="user.email" type="email" placeholder="Enter your email">
+                <div z-show="errors.email" style="color: #dc2626; font-size: 0.875rem;" z-text="errors.email"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Age:</label>
+                <input z-model="user.age" type="number" min="1" max="120">
+                <div z-show="errors.age" style="color: #dc2626; font-size: 0.875rem;" z-text="errors.age"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Country:</label>
+                <select z-model="user.country">
+                    <option value="US">United States</option>
+                    <option value="CA">Canada</option>
+                    <option value="UK">United Kingdom</option>
+                    <option value="DE">Germany</option>
+                    <option value="FR">France</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <input z-model="user.notifications" type="checkbox">
+                    Receive email notifications
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label>Theme:</label>
+                <label><input z-model="user.theme" type="radio" value="light"> Light</label>
+                <label><input z-model="user.theme" type="radio" value="dark"> Dark</label>
+            </div>
+
+            <button type="submit" z-bind:disabled="!isValid()">
+                <span z-show="!submitted">Submit Form</span>
+                <span z-show="submitted">✅ Submitted!</span>
+            </button>
+        </form>
+
+        <div z-show="submitted"
+            style="background: #dcfce7; color: #166534; padding: 1rem; border-radius: 4px; margin-top: 1rem;">
+            Form submitted successfully! Check the console for user data.
+        </div>
+
+        <details style="margin-top: 1rem;">
+            <summary>Current Form Data (Live Preview)</summary>
+            <pre z-bind:style="{ background: user.theme === 'dark' ? '#1e293b' : '#f8fafc', color: user.theme === 'dark' ? 'white' : 'black', padding: '1rem', borderRadius: '4px', marginTop: '0.5rem' }"
+                z-text="JSON.stringify(user, null, 2)"></pre>
+        </details>
+    </div>
+
+    <!-- Toggle Component -->
+    <div class="component" z-state="{
+      isVisible: false,
+      theme: 'light',
+      size: 'medium',
+      
+      toggle() {
+        this.isVisible = !this.isVisible;
+      },
+      
+      get buttonText() {
+        return this.isVisible ? 'Hide Content' : 'Show Content';
+      },
+      
+      get contentClass() {
+        return `content-${this.theme} size-${this.size}`;
+      }
+    }">
+        <h2>🎭 Toggle & Styling Component</h2>
+
+        <div>
+            <button z-on:click="toggle()" z-text="buttonText"></button>
+
+            <select z-model="theme" style="margin-left: 1rem;">
+                <option value="light">Light Theme</option>
+                <option value="dark">Dark Theme</option>
+            </select>
+
+            <select z-model="size">
+                <option value="small">Small</option>
+                <option value="medium">Medium</option>
+                <option value="large">Large</option>
+            </select>
+        </div>
+
+        <div z-show="isVisible" z-bind:class="contentClass"
+            style="margin-top: 1rem; padding: 1rem; border-radius: 4px; transition: all 0.3s ease;">
+            <h3>Dynamic Content!</h3>
+            <p>This content's appearance changes based on the selected theme and size.</p>
+            <p>Current theme: <strong z-text="theme"></strong></p>
+            <p>Current size: <strong z-text="size"></strong></p>
+        </div>
+
+        <style>
+            .content-light {
+                background: #f8fafc;
+                color: #1e293b;
+                border: 2px solid #e2e8f0;
+            }
+
+            .content-dark {
+                background: #1e293b;
+                color: #f8fafc;
+                border: 2px solid #475569;
+            }
+
+            .size-small {
+                font-size: 0.875rem;
+            }
+
+            .size-medium {
+                font-size: 1rem;
+            }
+
+            .size-large {
+                font-size: 1.25rem;
+            }
+        </style>
+    </div>
+
+    <script type="module" src="/index.ts"></script>
+</body>
+
+</html>
