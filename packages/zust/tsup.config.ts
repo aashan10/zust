@@ -1,73 +1,29 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig([
-    // Main package builds (ESM, CJS)
+    // ESM build (unminified) - for development and debugging
     {
         entry: ['src/index.ts'],
-        format: ['esm', 'cjs'],
+        format: ['esm'],
         dts: true,
         clean: true,
         sourcemap: true,
         minify: false,
-        splitting: false,
         outDir: 'dist',
-        external: [],
-        esbuildOptions(options) {
-            options.banner = {
-                js: '"use client";',
-            };
-        },
-    },
-    // CDN builds (UMD, minified)
-    {
-        entry: ['src/index.ts'],
-        format: ['iife'],
-        globalName: 'Zust',
-        outDir: 'dist',
-        outExtension: () => ({ js: '.umd.js' }),
-        minify: false,
-        sourcemap: true,
+        outExtension: () => ({ js: '.dev.js' }),
+        // Bundle everything for standalone usage
         noExternal: [/.*/],
-        esbuildOptions(options) {
-            options.footer = {
-                js: `
-// Auto-start Zust when loaded via CDN
-if (typeof window !== 'undefined' && window.Zust && window.Zust.default) {
-  window.zust = window.Zust.default;
-  // Auto-start when DOM is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => window.zust.start());
-  } else {
-    window.zust.start();
-  }
-}`,
-            };
-        },
     },
-    // CDN build (minified)
+    // ESM build (minified) - for production
     {
         entry: ['src/index.ts'],
         format: ['esm'],
-        globalName: 'Zust',
-        outDir: 'dist',
-        outExtension: () => ({ js: '.esm.min.js' }),
-        minify: true,
+        dts: false, // Only generate types once
+        clean: false,
         sourcemap: true,
+        minify: true,
+        outDir: 'dist',
+        // Bundle everything for standalone usage
         noExternal: [/.*/],
-        esbuildOptions(options) {
-            options.footer = {
-                js: `
-// Auto-start Zust when loaded via CDN
-if (typeof window !== 'undefined' && window.Zust && window.Zust.default) {
-  window.zust = window.Zust.default;
-  // Auto-start when DOM is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => window.zust.start());
-  } else {
-    window.zust.start();
-  }
-}`,
-            };
-        },
     },
 ]);

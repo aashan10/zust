@@ -1,20 +1,20 @@
 {
   "name": "@zust/zust",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A minimalist, modern, and lightweight frontend framework with reactive, declarative behavior",
-  "main": "./dist/index.cjs",
+  "type": "module",
+  "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.js"
     }
   },
-  "unpkg": "./dist/index.esm.min.js",
-  "jsdelivr": "./dist/index.esm.min.js",
-  "cdn": "./dist/index.esm.min.js",
+  "unpkg": "./dist/index.js",
+  "jsdelivr": "./dist/index.js",
+  "cdn": "./dist/index.js",
   "files": [
     "dist",
     "README.md",

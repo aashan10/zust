@@ -49,15 +49,23 @@ npm install zust
         <button z-on:click="count++">+</button>
     </div>
 
-    <!-- Zust auto-starts when loaded via CDN -->
-    <script src="https://unpkg.com/@zust/zust@latest/dist/index.esm.min.js"></script>
+    <script type="module">
+        import zust from 'https://unpkg.com/@zust/zust@latest/dist/index.js';
+        zust.start();
+    </script>
 </body>
 </html>
 ```
 
 **CDN Options:**
-- **unpkg**: `https://unpkg.com/@zust/zust@latest/dist/index.esm.min.js`
-- **jsDelivr**: `https://cdn.jsdelivr.net/npm/@zust/zust@latest/dist/index.esm.min.js`
+
+**Production (Minified):**
+- **unpkg**: `https://unpkg.com/@zust/zust@latest/dist/index.js`
+- **jsDelivr**: `https://cdn.jsdelivr.net/npm/@zust/zust@latest/dist/index.js`
+
+**Development (Unminified):**
+- **unpkg**: `https://unpkg.com/@zust/zust@latest/dist/index.dev.js`
+- **jsDelivr**: `https://cdn.jsdelivr.net/npm/@zust/zust@latest/dist/index.dev.js`
 
 ## 📖 Core Concepts
 
@@ -541,15 +549,13 @@ Zust provides several magic variables accessible in expressions:
 - **`$event`** - The DOM event object (in event handlers)
 - **`$element`** - The current DOM element (in intersection observers)
 
-## 📦 Build Outputs
+## 📦 Build Output
 
-Zust provides multiple build formats for different use cases:
+Zust provides modern ESM builds:
 
-- **ESM (ES Modules)**: `dist/index.mjs` - For modern bundlers and `import` statements
-- **CommonJS**: `dist/index.js` - For Node.js and `require()` 
+- **ESM Production**: `dist/index.js` - Minified ES module (13KB) for production CDN usage
+- **ESM Development**: `dist/index.dev.js` - Unminified ES module (30KB) for development and debugging
 - **TypeScript**: `dist/index.d.ts` - Type definitions
-- **UMD**: `dist/index.umd.js` - Universal module for CDN usage
-- **UMD Minified**: `dist/index.umd.min.js` - Minified version for production CDN (13KB)
 
 ## 🚀 What Makes Zust Special
 

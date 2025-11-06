@@ -1,5 +1,5 @@
 // Use the built package for development demos
-import zust from './packages/zust/dist/index.mjs';
+import zust from './packages/zust/dist/index';
 
 // Start the framework
 zust.start();
