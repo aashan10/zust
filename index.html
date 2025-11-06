@@ -1,642 +1,313 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Zust - Alpine.js Inspired Reactivity</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-            background: #f8fafc;
-        }
-
-        .component {
-            background: white;
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .component h2 {
-            margin-top: 0;
-            color: #1e293b;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 0.5rem;
-        }
-
-        button {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            margin: 0.25rem;
-        }
-
-        button:hover {
-            background: #2563eb;
-        }
-
-        button:disabled {
-            background: #94a3b8;
-            cursor: not-allowed;
-        }
-
-        input,
-        select {
-            padding: 0.5rem;
-            border: 2px solid #e2e8f0;
-            border-radius: 4px;
-            margin: 0.25rem;
-        }
-
-        input:focus,
-        select:focus {
-            outline: none;
-            border-color: #3b82f6;
-        }
-
-        .todo-item {
-            display: flex;
-            align-items: center;
-            padding: 0.5rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .todo-item:last-child {
-            border-bottom: none;
-        }
-
-        .todo-text {
-            flex: 1;
-            margin-left: 0.5rem;
-        }
-
-        .todo-text.completed {
-            text-decoration: line-through;
-            color: #64748b;
-        }
-
-        .counter-display {
-            font-size: 2rem;
-            font-weight: bold;
-            text-align: center;
-            padding: 1rem;
-            background: #f1f5f9;
-            border-radius: 4px;
-            margin: 1rem 0;
-        }
-
-        .positive {
-            color: #059669;
-        }
-
-        .negative {
-            color: #dc2626;
-        }
-
-        .zero {
-            color: #64748b;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.25rem;
-            font-weight: 500;
-        }
-
-        .tabs {
-            display: flex;
-            border-bottom: 2px solid #e2e8f0;
-            margin-bottom: 1rem;
-        }
-
-        .tab {
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-        }
-
-        .tab.active {
-            border-bottom-color: #3b82f6;
-            color: #3b82f6;
-            font-weight: 500;
-        }
-
-        .tab-content {
-            min-height: 100px;
-            padding: 1rem 0;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zust Framework - Demo</title>
+    <link rel="stylesheet" href="./app.css" />
 </head>
 
-<body>
-    <header>
-        <h1>🚀 Zust Framework Examples</h1>
-        <p>Alpine.js-inspired reactivity with isolated component state</p>
+<!-- ======================================================================= -->
+<!-- Component States                                                      -->
+<!-- ======================================================================= -->
+<script type="text/javascript">
+    // Global state for theme management
+    window.globalState = {
+        theme: 'light',
+        init() {
+            this.theme = localStorage.getItem('theme') || 'light';
+            this.setTheme();
+        },
+        toggleTheme() {
+            this.theme = this.theme === 'light' ? 'dark' : 'light';
+            localStorage.setItem('theme', this.theme);
+            this.setTheme();
+        },
+        setTheme() {
+            if (this.theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+    };
+
+    // Counter component state
+    window.counterState = {
+        count: 0,
+        increment() {
+            this.count++;
+        },
+        decrement() {
+            this.count--;
+        },
+        reset() {
+            this.count = 0;
+        }
+    };
+
+    // Conditional rendering component state
+    window.conditionalState = {
+        isVisible: true,
+        isMounted: true,
+        toggleVisibility() {
+            this.isVisible = !this.isVisible;
+        },
+        toggleMount() {
+            this.isMounted = !this.isMounted;
+        }
+    };
+
+    // Todo list component state
+    window.todoState = {
+        todos: [
+            {id: 1, text: 'Learn Zust', completed: true},
+            {id: 2, text: 'Build an app', completed: false},
+            {id: 3, text: 'Profit', completed: false},
+        ],
+        newTodo: '',
+        remaining() {
+            return this.todos.filter(todo => !todo.completed).length;
+        },
+        addTodo() {
+            if (!this.newTodo.trim()) return;
+            this.todos.push({
+                id: Date.now(),
+                text: this.newTodo.trim(),
+                completed: false
+            });
+            this.newTodo = '';
+        },
+        removeTodo(id) {
+            this.todos = this.todos.filter(todo => todo.id !== id);
+        }
+    };
+
+    // Intersection observer component state
+    window.intersectState = {
+        status: 'Scroll down to see the magic element.',
+        elementIsVisible() {
+            this.status = '✅ The magic element is visible!';
+        },
+        elementIsHidden() {
+            this.status = '❌ The magic element is hidden.';
+        }
+    };
+
+    // Lazy load image component state
+    window.lazyImageState = {
+        // Using a random image from Unsplash for demonstration
+        imageUrl: 'https://source.unsplash.com/random/800x600?nature,ocean'
+    };
+</script>
+
+
+<!-- ======================================================================= -->
+<!-- Body & Global Component                                               -->
+<!-- ======================================================================= -->
+
+<body z-state="window.globalState"
+    class="bg-zinc-100 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-200 transition-colors duration-300 font-sans">
+
+    <!-- Header -->
+    <header
+        class="sticky top-0 z-10 w-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800">
+        <div class="container mx-auto px-4 h-16 flex justify-between items-center">
+            <a href="#" class="font-bold uppercase text-xl tracking-wider">Zust Demo</a>
+            <nav class="flex items-center gap-6">
+                <a href="#counter" class="text-sm font-medium hover:text-indigo-500 transition-colors">Counter</a>
+                <a href="#conditional"
+                    class="text-sm font-medium hover:text-indigo-500 transition-colors">Conditional</a>
+                <a href="#todos" class="text-sm font-medium hover:text-indigo-500 transition-colors">Todos</a>
+                <a href="#intersection"
+                    class="text-sm font-medium hover:text-indigo-500 transition-colors">Intersection</a>
+                <a href="#lazy-image" class="text-sm font-medium hover:text-indigo-500 transition-colors">Lazy Image</a>
+                <button z-on:click="toggleTheme()"
+                    class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors">
+                    <span z-show="theme === 'light'">🌚</span>
+                    <span z-show="theme === 'dark'">🌞</span>
+                </button>
+            </nav>
+        </div>
     </header>
 
-    <!-- Counter Component -->
-    <div class="component" z-state="{
-      count: 0,
-      increment() { this.count++ },
-      decrement() { this.count-- },
-      reset() { this.count = 0 },
-      get displayClass() {
-        if (this.count > 0) return 'positive';
-        if (this.count < 0) return 'negative';
-        return 'zero';
-      }
-    }">
-        <h2>📊 Counter Component</h2>
-        <div class="counter-display" z-bind:class="displayClass">
-            Count: <span z-bind:style="{ fontSize: count > 10 ? '3rem' : '2rem' }" z-text="count"></span>
-        </div>
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 flex flex-col gap-12">
 
-        <div>
-            <button z-on:click="decrement()">-</button>
-            <button z-on:click="increment()">+</button>
-            <button z-on:click="reset()" z-bind:disabled="count === 0">Reset</button>
-        </div>
+        <!-- ======================================================================= -->
+        <!-- Counter Component Demo                                                -->
+        <!-- ======================================================================= -->
+        <section id="counter" class="scroll-mt-24">
+            <div
+                class="bg-white dark:bg-zinc-800/50 p-8 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-800">
+                <h2 class="text-2xl font-bold mb-1">Counter</h2>
+                <p class="text-zinc-500 dark:text-zinc-400 mb-6">A simple component demonstrating state updates and
+                    methods.</p>
 
-        <div style="margin-top: 1rem;">
-            <input z-model="count" type="number" placeholder="Set count directly">
-        </div>
-
-        <p z-show="count !== 0">
-            The count is <strong z-bind:class="displayClass" z-text="count"></strong>
-            <span z-show="count > 0">and positive! 🎉</span>
-            <span z-show="count < 0">and negative 📉</span>
-        </p>
-    </div>
-
-    <!-- Todo List Component -->
-    <div class="component" z-state="{
-      todos: [
-        { id: 1, text: 'Learn Zust framework', completed: false },
-        { id: 2, text: 'Build awesome apps', completed: false }
-      ],
-      newTodo: '',
-      filter: 'all',
-      
-      addTodo() {
-        if (this.newTodo.trim()) {
-          this.todos.push({
-            id: Date.now(),
-            text: this.newTodo.trim(),
-            completed: false
-          });
-          this.newTodo = '';
-        }
-      },
-      
-      toggleTodo(id) {
-        const todo = this.todos.find(t => t.id === id);
-        if (todo) todo.completed = !todo.completed;
-      },
-      
-      removeTodo(id) {
-        this.todos = this.todos.filter(t => t.id !== id);
-      },
-
-      filteredTodos() {
-        switch (this.filter) {
-          case 'active': return this.todos.filter(t => !t.completed);
-          case 'completed': return this.todos.filter(t => t.completed);
-          default: return this.todos;
-        }
-      },
-
-    shouldShow(todo) {
-            switch(this.filter) {
-                case 'all':
-                    return true;
-                case 'completed':
-                    return todo.completed;
-                case 'active':
-                    return !todo.completed;
-            };
-        },
-      
-      get stats() {
-        const total = this.todos.length;
-        const completed = this.todos.filter(t => t.completed).length;
-        const active = total - completed;
-        return { total, completed, active };
-      }
-    }">
-        <h2>✅ Todo List Component</h2>
-
-        <div class="form-group">
-            <input z-model="newTodo" z-on:keyup="$event.key === 'Enter' && addTodo()" placeholder="Add a new todo..."
-                style="width: 70%;">
-            <button z-on:click="addTodo()" z-bind:disabled="!newTodo.trim()">Add Todo</button>
-        </div>
-
-        <div class="tabs">
-            <div class="tab" z-bind:class="{ active: filter === 'all' }" z-on:click="filter = 'all'">
-                All (<span z-text="todos.length"></span>)
-            </div>
-            <div class="tab" z-bind:class="{ active: filter === 'active' }" z-on:click="filter = 'active'">
-                Active (<span z-text="todos.filter(t => !t.completed).length"></span>)
-            </div>
-            <div class="tab" z-bind:class="{ active: filter === 'completed' }" z-on:click="filter = 'completed'">
-                Completed (<span z-text="todos.filter(t => t.completed).length"></span>)
-            </div>
-        </div>
-
-        <div class="tab-content">
-            <div z-show="filteredTodos().length === 0" style="text-align: center; color: #64748b;">
-                <span z-show="filter === 'all'">No todos yet. Add one above! 📝</span>
-                <span z-show="filter === 'active'">No active todos! 🎉</span>
-                <span z-show="filter === 'completed'">No completed todos yet.</span>
-            </div>
-
-            <div z-show="filteredTodos().length > 0">
-                <template z-for="(todo, $index) in filteredTodos()" z-key="todo.id">
-                    <div class="todo-item">
-                        <input type="checkbox" z-model="todo.completed">
-                        <span class="todo-text" z-bind:class="{ completed: todo.completed }" z-text="todo.text"></span>
-                        <button z-on:click="removeTodo(todo.id)"
-                            style="margin-left: auto; background: #dc2626; font-size: 0.75rem; padding: 0.25rem 0.5rem;">
-                            ×
-                        </button>
+                <div z-state="window.counterState" class="flex flex-col items-center gap-6">
+                    <span class="text-7xl font-bold text-indigo-500" z-text="count"></span>
+                    <div class="flex items-center gap-4">
+                        <button z-on:click="decrement()"
+                            class="px-6 py-2 rounded-lg bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors font-semibold">-</button>
+                        <button z-on:click="reset()"
+                            class="px-6 py-2 rounded-lg bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors font-semibold">Reset</button>
+                        <button z-on:click="increment()"
+                            class="px-6 py-2 rounded-lg bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors font-semibold">+</button>
                     </div>
-                </template>
-            </div>
-        </div>
-    </div>
-
-    <!-- z-for Examples Component -->
-    <div class="component" z-state="{
-      items: ['Apple', 'Banana', 'Cherry'],
-      users: [
-        { id: 1, name: 'Alice', role: 'Admin' },
-        { id: 2, name: 'Bob', role: 'User' },
-        { id: 3, name: 'Charlie', role: 'Moderator' }
-      ],
-      colors: ['red', 'green', 'blue', 'purple', 'orange'],
-      
-      addItem() {
-        this.items.push(`Item ${this.items.length + 1}`);
-      },
-      
-      removeItem(index) {
-        this.items.splice(index, 1);
-      },
-      
-      addUser() {
-        this.users.push({
-          id: Date.now(),
-          name: `User ${this.users.length + 1}`,
-          role: 'User'
-        });
-      }
-    }">
-        <h2>🔄 z-for Examples</h2>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-            <!-- Simple list with index -->
-            <div>
-                <h3>Simple List with Index</h3>
-                <button z-on:click="addItem()">Add Item</button>
-                <ul>
-                    <template z-for="(item, $index) in items" z-key="$index">
-                        <li>
-                            <span z-text="$index + 1"></span>. <span z-text="item"></span>
-                            <button z-on:click="removeItem($index)"
-                                style="margin-left: 0.5rem; font-size: 0.75rem;">×</button>
-                        </li>
-                    </template>
-                </ul>
-            </div>
-
-            <!-- Object iteration -->
-            <div>
-                <h3>Object List</h3>
-                <button z-on:click="addUser()">Add User</button>
-                <div>
-                    <template z-for="(user, $index) in users" z-key="user.id">
-                        <div style="padding: 0.5rem; border: 1px solid #e2e8f0; margin: 0.25rem 0; border-radius: 4px;">
-                            <strong z-text="user.name"></strong> -
-                            <span z-text="user.role"
-                                z-bind:style="{ color: user.role === 'Admin' ? '#dc2626' : '#059669' }"></span>
-                            <small style="color: #64748b;">(ID: <span z-text="user.id"></span>)</small>
-                        </div>
-                    </template>
                 </div>
             </div>
+        </section>
 
-            <!-- Color showcase -->
-            <div>
-                <h3>Dynamic Styling</h3>
-                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                    <template z-for="(color, $index) in colors">
-                        <div z-bind:style="{ 
-                            backgroundColor: color, 
-                            color: 'white', 
-                            padding: '0.5rem 1rem', 
-                            borderRadius: '20px',
-                            fontSize: '0.875rem',
-                            fontWeight: 'bold'
-                        }">
-                            <span z-text="color"></span> (<span z-text="$index"></span>)
+        <!-- ======================================================================= -->
+        <!-- Conditional Rendering Demo                                            -->
+        <!-- ======================================================================= -->
+        <section id="conditional" class="scroll-mt-24">
+            <div
+                class="bg-white dark:bg-zinc-800/50 p-8 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-800">
+                <h2 class="text-2xl font-bold mb-1">Conditional Rendering</h2>
+                <p class="text-zinc-500 dark:text-zinc-400 mb-6">Demonstrates `z-show` (toggles visibility) and `z-if`
+                    (toggles in DOM).</p>
+
+                <div z-state="window.conditionalState" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- z-show example -->
+                    <div class="flex flex-col gap-4">
+                        <h3 class="font-semibold"><code>z-show</code> Example</h3>
+                        <button z-on:click="toggleVisibility()"
+                            class="px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold w-48">Toggle
+                            Visibility</button>
+                        <div z-show="isVisible"
+                            class="p-4 rounded-lg bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800">
+                            This element is always in the DOM. Its `display` style is toggled.
                         </div>
-                    </template>
+                    </div>
+                    <!-- z-if example -->
+                    <div class="flex flex-col gap-4">
+                        <h3 class="font-semibold"><code>z-if</code> Example</h3>
+                        <button z-on:click="toggleMount()"
+                            class="px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold w-48">Toggle
+                            Mount</button>
+                        <div z-if="isMounted"
+                            class="p-4 rounded-lg bg-sky-100 dark:bg-sky-900/50 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                            This element is added or removed from the DOM entirely.
+                        </div>
+                    </div>
                 </div>
             </div>
+        </section>
 
-            <!-- Simple item iteration -->
-            <div>
-                <h3>Simple Items</h3>
-                <p>Total: <span z-text="items.length"></span> items</p>
-                <template z-for="item in items">
-                    <span z-bind:style="{ 
-                        display: 'inline-block',
-                        background: '#f1f5f9', 
-                        padding: '0.25rem 0.5rem', 
-                        margin: '0.25rem',
-                        borderRadius: '4px',
-                        fontSize: '0.875rem'
-                    }" z-text="item"></span>
-                </template>
+        <!-- ======================================================================= -->
+        <!-- Todo List Demo                                                        -->
+        <!-- ======================================================================= -->
+        <section id="todos" class="scroll-mt-24">
+            <div
+                class="bg-white dark:bg-zinc-800/50 p-8 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-800">
+                <h2 class="text-2xl font-bold mb-1">Todo List</h2>
+                <p class="text-zinc-500 dark:text-zinc-400 mb-6">Demonstrates `z-for`, `z-model`, `z-key`, and computed
+                    properties.</p>
+
+                <div z-state="window.todoState" class="max-w-lg mx-auto">
+                    <!-- Add Todo Form -->
+                    <form z-on:submit="addTodo()" class="flex gap-2 mb-4">
+                        <input z-model="newTodo" type="text" placeholder="What needs to be done?"
+                            class="flex-grow bg-zinc-100 dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                        <button type="submit"
+                            class="px-6 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-600 transition-colors">Add</button>
+                    </form>
+
+                    <!-- Todo List -->
+                    <ul class="space-y-2">
+                        <template z-for="todo in todos" z-key="todo.id">
+                            <li class="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
+                                <input type="checkbox" z-model="todo.completed"
+                                    class="h-5 w-5 rounded text-indigo-500 focus:ring-indigo-500 border-zinc-300 dark:border-zinc-600 bg-zinc-100 dark:bg-zinc-900">
+                                <span z-text="todo.text" z-bind:class="{ 'line-through text-zinc-500': todo.completed }"
+                                    class="flex-grow"></span>
+                                <button z-on:click="removeTodo(todo.id)"
+                                    class="text-zinc-400 hover:text-red-500 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                        fill="currentColor">
+                                        <path fill-rule="evenodd"
+                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </li>
+                        </template>
+                    </ul>
+
+                    <!-- List Footer -->
+                    <div class="mt-4 text-sm text-zinc-500 dark:text-zinc-400 flex justify-between">
+                        <span>Total Todos: <span z-text="todos.length"></span></span>
+                        <span>Remaining: <span z-text="remaining()"></span></span>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <!-- Form Component -->
-    <div class="component" z-state="{
-      user: {
-        name: '',
-        email: '',
-        age: 18,
-        country: 'US',
-        notifications: true,
-        theme: 'light'
-      },
-      
-      errors: {},
-      submitted: false,
-      
-      validate() {
-        this.errors = {};
-        
-        if (!this.user.name.trim()) {
-          this.errors.name = 'Name is required';
-        }
-        
-        if (!this.user.email.includes('@')) {
-          this.errors.email = 'Valid email is required';
-        }
-        
-        if (this.user.age < 13) {
-          this.errors.age = 'Must be at least 13 years old';
-        }
-        
-        return Object.keys(this.errors).length === 0;
-      },
-      
-      submitForm() {
-        if (this.validate()) {
-          this.submitted = true;
-          setTimeout(() => { this.submitted = false; }, 3000);
-        }
-      },
-      
-      isValid() {
-        return this.user.name.trim() && 
-               this.user.email.includes('@') && 
-               this.user.age >= 13;
-      }
-    }">
-        <h2>📋 Form Component</h2>
+        <!-- ======================================================================= -->
+        <!-- Intersection Observer Demo                                            -->
+        <!-- ======================================================================= -->
+        <section id="intersection" class="scroll-mt-24">
+            <div
+                class="bg-white dark:bg-zinc-800/50 p-8 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-800">
+                <h2 class="text-2xl font-bold mb-1">Intersection Observer</h2>
+                <p class="text-zinc-500 dark:text-zinc-400 mb-6">Demonstrates `z-intersect:visible` and
+                    `z-intersect:invisible`.</p>
 
-        <form z-on:submit="$event.preventDefault(); submitForm()">
-            <div class="form-group">
-                <label>Name:</label>
-                <input z-model="user.name" type="text" placeholder="Enter your name">
-                <div z-show="errors.name" style="color: #dc2626; font-size: 0.875rem;" z-text="errors.name"></div>
+                <div z-state="window.intersectState">
+                    <div class="text-center p-4 rounded-lg bg-zinc-200 dark:bg-zinc-700 font-mono sticky top-20">
+                        Status: <span z-text="status" class="font-bold"></span>
+                    </div>
+
+                    <div class="h-96 flex items-center justify-center text-zinc-400">
+                        (Scroll down...)
+                    </div>
+
+                    <div z-intersect:visible="elementIsVisible()" z-intersect:invisible="elementIsHidden()"
+                        class="p-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-center">
+                        <p class="font-bold text-lg">✨ Magic Element ✨</p>
+                        <p>I trigger events when I enter or leave the viewport.</p>
+                    </div>
+
+                    <div class="h-96 flex items-center justify-center text-zinc-400">
+                        (Scroll up...)
+                    </div>
+                </div>
             </div>
+        </section>
 
-            <div class="form-group">
-                <label>Email:</label>
-                <input z-model="user.email" type="email" placeholder="Enter your email">
-                <div z-show="errors.email" style="color: #dc2626; font-size: 0.875rem;" z-text="errors.email"></div>
+        <!-- ======================================================================= -->
+        <!-- Lazy Loading Image Demo                                               -->
+        <!-- ======================================================================= -->
+        <section id="lazy-image" class="scroll-mt-24">
+            <div
+                class="bg-white dark:bg-zinc-800/50 p-8 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-800">
+                <h2 class="text-2xl font-bold mb-1">Lazy Loading Image</h2>
+                <p class="text-zinc-500 dark:text-zinc-400 mb-6">The image below will only be downloaded when it is
+                    scrolled into the viewport.</p>
+
+                <div z-state="window.lazyImageState">
+                    <div class="h-96 flex items-center justify-center text-zinc-400">
+                        (Scroll down to see the image)
+                    </div>
+
+                    <img z-lazy="'https://picsum.photos/1920/1280'" alt="A randomly loaded nature image"
+                        class="w-full max-w-2xl mx-auto aspect-video rounded-lg bg-zinc-200 dark:bg-zinc-700 object-cover">
+
+                    <div class="h-48 flex items-center justify-center text-zinc-400">
+                    </div>
+                </div>
             </div>
+        </section>
 
-            <div class="form-group">
-                <label>Age:</label>
-                <input z-model="user.age" type="number" min="1" max="120">
-                <div z-show="errors.age" style="color: #dc2626; font-size: 0.875rem;" z-text="errors.age"></div>
-            </div>
+    </main>
 
-            <div class="form-group">
-                <label>Country:</label>
-                <select z-model="user.country">
-                    <option value="US">United States</option>
-                    <option value="CA">Canada</option>
-                    <option value="UK">United Kingdom</option>
-                    <option value="DE">Germany</option>
-                    <option value="FR">France</option>
-                </select>
-            </div>
+    <footer class="text-center py-8 text-sm text-zinc-500 dark:text-zinc-400">
+        Zust Framework Demo
+    </footer>
 
-            <div class="form-group">
-                <label>
-                    <input z-model="user.notifications" type="checkbox">
-                    Receive email notifications
-                </label>
-            </div>
-
-            <div class="form-group">
-                <label>Theme:</label>
-                <label><input z-model="user.theme" type="radio" value="light"> Light</label>
-                <label><input z-model="user.theme" type="radio" value="dark"> Dark</label>
-            </div>
-
-            <button type="submit" z-bind:disabled="!isValid()">
-                <span z-show="!submitted">Submit Form</span>
-                <span z-show="submitted">✅ Submitted!</span>
-            </button>
-        </form>
-
-        <div z-show="submitted"
-            style="background: #dcfce7; color: #166534; padding: 1rem; border-radius: 4px; margin-top: 1rem;">
-            Form submitted successfully! Check the console for user data.
-        </div>
-
-        <details style="margin-top: 1rem;">
-            <summary>Current Form Data (Live Preview)</summary>
-            <pre z-bind:style="{ background: user.theme === 'dark' ? '#1e293b' : '#f8fafc', color: user.theme === 'dark' ? 'white' : 'black', padding: '1rem', borderRadius: '4px', marginTop: '0.5rem' }"
-                z-text="JSON.stringify(user, null, 2)"></pre>
-        </details>
-    </div>
-
-    <!-- Toggle Component -->
-    <div class="component" z-state="{
-      isVisible: false,
-      theme: 'light',
-      size: 'medium',
-      
-      toggle() {
-        this.isVisible = !this.isVisible;
-      },
-      
-      get buttonText() {
-        return this.isVisible ? 'Hide Content' : 'Show Content';
-      },
-      
-      get contentClass() {
-        return `content-${this.theme} size-${this.size}`;
-      }
-    }">
-        <h2>🎭 Toggle & Styling Component</h2>
-
-        <div>
-            <button z-on:click="toggle()" z-text="buttonText"></button>
-
-            <select z-model="theme" style="margin-left: 1rem;">
-                <option value="light">Light Theme</option>
-                <option value="dark">Dark Theme</option>
-            </select>
-
-            <select z-model="size">
-                <option value="small">Small</option>
-                <option value="medium">Medium</option>
-                <option value="large">Large</option>
-            </select>
-        </div>
-
-        <div z-show="isVisible" z-bind:class="contentClass"
-            style="margin-top: 1rem; padding: 1rem; border-radius: 4px; transition: all 0.3s ease;">
-            <h3>Dynamic Content!</h3>
-            <p>This content's appearance changes based on the selected theme and size.</p>
-            <p>Current theme: <strong z-text="theme"></strong></p>
-            <p>Current size: <strong z-text="size"></strong></p>
-        </div>
-
-        <style>
-            .content-light {
-                background: #f8fafc;
-                color: #1e293b;
-                border: 2px solid #e2e8f0;
-            }
-
-            .content-dark {
-                background: #1e293b;
-                color: #f8fafc;
-                border: 2px solid #475569;
-            }
-
-            .size-small {
-                font-size: 0.875rem;
-            }
-
-            .size-medium {
-                font-size: 1rem;
-            }
-
-            .size-large {
-                font-size: 1.25rem;
-            }
-        </style>
-    </div>
-
-    <!-- Intersection Observer Demo -->
-    <div class="component" z-state="{
-        visibleCount: 0,
-        invisibleCount: 0,
-        status: 'Not yet visible',
-        setVisible() {
-            this.visibleCount++;
-            this.status = 'Mom, I\'m visible';
-        },
-        setInvisible() {
-            this.invisibleCount++;
-            this.status = 'Look who\'s invisible!';
-        },
-    }">
-        <h2>Intersection Observer Demo</h2>
-        <p>Scroll down to see the intersection observer in action!</p>
-
-        <div
-            style="height: 100vh; background: #f1f5f9; display: flex; align-items: center; justify-content: center; margin: 2rem 0;">
-            <p style="font-size: 1.2rem; color: #64748b;">↓ Scroll down to trigger intersection ↓</p>
-        </div>
-
-        <div style="background: #dbeafe; border: 2px solid #3b82f6; padding: 2rem; margin: 2rem 0; text-align: center;"
-            z-intersect:visible="setVisible()" z-intersect:invisible="setInvisible()">
-            <h3>Watch me! 👀</h3>
-            <p z-text="status"></p>
-            <p>Visible count: <span z-text="visibleCount"></span></p>
-            <p>Invisible count: <span z-text="invisibleCount"></span></p>
-        </div>
-
-        <div style="height: 100vh; background: #f1f5f9; display: flex; align-items: center; justify-content: center;">
-            <p style="font-size: 1.2rem; color: #64748b;">Keep scrolling to test invisible trigger ↓</p>
-        </div>
-    </div>
-
-    <!-- Parent-Child Component Demo -->
-    <div class="component" z-state="{
-        counter: 0,
-        increment() { 
-            this.counter++; 
-        },
-        decrement() { 
-            this.counter--; 
-        }
-    }">
-        <h2>Parent-Child Component Demo</h2>
-        <p>Parent counter: <span z-text="counter"></span></p>
-        <button z-on:click="increment()">Increment Parent</button>
-        <button z-on:click="decrement()">Decrement Parent</button>
-        
-        <!-- Child Component with reactive reference sharing -->
-        <div style="border: 2px solid #10b981; border-radius: 8px; padding: 1.5rem; margin: 1rem 0; background: #f0fdf4;" z-state="{
-            counter: $parent.counter,
-            incrementTwo() { 
-                this.counter += 2; 
-            },
-            decrementTwo() {
-                this.counter -= 2;
-            },
-            incrementChildOnly() {
-                this.counter++;
-            }
-        }">
-            <h3>Child Component (Reactive Reference Sharing)</h3>
-            <p>Child counter (reference to parent): <span z-text="counter"></span></p>
-            <p>Parent counter (direct): <span z-text="$parent.counter"></span></p>
-            
-            <button z-on:click="incrementTwo()" style="background: #10b981;">Add 2 via Child Counter</button>
-            <button z-on:click="decrementTwo()" style="background: #ef4444;">Subtract 2 via Child Counter</button>
-            <button z-on:click="incrementChildOnly()" style="background: #8b5cf6;">Increment via Child Counter</button>
-            
-            <!-- Show both counters are always in sync -->
-            <div style="margin-top: 1rem; padding: 1rem; background: #e0f2fe; border-radius: 4px;">
-                <p><strong>✨ Magic:</strong> Child counter is always the same as parent counter!</p>
-                <p>Child: <span z-text="counter"></span> | Parent: <span z-text="$parent.counter"></span></p>
-                <p style="color: #10b981;">✓ Counters are always in perfect sync</p>
-                <p style="color: #64748b; font-size: 0.9rem;">
-                    Modifying child.counter directly modifies parent.counter
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <script type="module" src="/index.ts"></script>
+    <script type="module" src="./index.ts"></script>
 </body>
 
 </html>
