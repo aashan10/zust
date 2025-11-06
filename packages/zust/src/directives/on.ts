@@ -20,6 +20,29 @@ export const createOnDirective = (eventType: string): DirectiveHandler => {
     };
 };
 
+export const clickOutside: DirectiveHandler = (element, value, context) => {
+    const { batch, evaluate } = context;
+
+    const listener = (e: MouseEvent) => {
+        if (!e.target) {
+            return;
+        }
+
+        if (!element.contains(e.target as HTMLElement)) {
+            batch(() => {
+                evaluate(value, { $event: e });
+            });
+        }
+    }
+
+    document.addEventListener('click', listener);
+
+    return () => {
+        document.removeEventListener('click', listener);
+    }
+
+}
+
 // Pre-created common event directives
 export const onClick = createOnDirective('click');
 export const onInput = createOnDirective('input');

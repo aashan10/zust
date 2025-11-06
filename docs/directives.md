@@ -11,6 +11,7 @@ Directives are special HTML attributes prefixed with `z-` that give elements rea
 - [Form Input Binding](#form-input-binding)
 - [Conditional Rendering](#conditional-rendering)
 - [List Rendering](#list-rendering)
+- [Lazy Loading](#lazy-loading)
 - [Intersection Observer](#intersection-observer)
 - [Parent-Child Communication](#parent-child-communication)
 
@@ -378,7 +379,7 @@ Conditionally adds/removes elements from the DOM completely. **Must be used on `
 Renders lists of elements. **Must be used on `<template>` tags**.
 
 ```html
-<div z-state="{ 
+<div z-state="{
     todos: [
         { id: 1, text: 'Learn Zust', completed: false },
         { id: 2, text: 'Build app', completed: true }
@@ -451,8 +452,39 @@ Provides unique identity for list items to optimize updates. **Highly recommende
 - Preserves component state during list changes
 - Prevents UI glitches and input focus loss
 
-## Intersection Observer
+## Lazy Loading
 
+### `z-lazy`
+
+Efficiently lazy-loads content for elements with a `src` attribute, such as images, videos, and iframes. The `src` attribute is only set when the element enters the viewport, saving bandwidth and improving initial page load performance.
+
+The directive's value should be a string expression that evaluates to the URL of the resource to load.
+
+```html
+<div z-state="{
+    post: {
+        heroImage: '/images/large-hero.jpg',
+        promoVideo: '/videos/promo.mp4'
+    }
+}">
+    <!-- This image will not be downloaded until it is scrolled into view -->
+    <img z-lazy="post.heroImage" 
+         alt="A descriptive alt text"
+         class="w-full h-auto bg-gray-200">
+
+    <!-- This video will also be lazy-loaded -->
+    <video controls z-lazy="post.promoVideo" class="w-full"></video>
+</div>
+```
+
+**Use Cases:**
+- Lazy loading images in a gallery or blog post.
+- Deferring the loading of below-the-fold videos or iframes.
+- Improving performance on pages with many media assets.
+
+**Note:** The element with `z-lazy` should have placeholder dimensions (e.g., using CSS `aspect-ratio` or width/height attributes) to prevent layout shift when the content loads.
+
+## Intersection Observer
 ### `z-intersect:visible` / `z-intersect:invisible`
 
 Triggers actions when elements enter or leave the viewport using the Intersection Observer API.

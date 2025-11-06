@@ -29,10 +29,12 @@ function handleClassBinding(element: HTMLElement, value: any) {
     } else if (typeof value === 'object' && value !== null) {
         // Object syntax: { 'class-name': boolean }
         for (const [className, shouldAdd] of Object.entries(value)) {
+            const classes = className.split(' ');
+            
             if (shouldAdd) {
-                element.classList.add(className);
+                classes.map(c => element.classList.add(c));
             } else {
-                element.classList.remove(className);
+                classes.map(c => element.classList.remove(c));
             }
         }
     } else if (Array.isArray(value)) {
