@@ -25,6 +25,7 @@ interface ComponentContext {
     createSignal: any;
     createEffect: any;
     createMemo: any;
+    createStore: any;
     batch: any;
     zustInstance: Zust;
     parent?: ComponentContext;
@@ -161,48 +162,23 @@ class Zust {
         try {
             // Find parent component context first
             const parentContext = this.getParentContext(element);
+
+            // Inherit reactivity context from parent, or create a new one for the root.
+            const reactivity = parentContext ? {
+                createSignal: parentContext.createSignal,
+                createEffect: parentContext.createEffect,
+                createMemo: parentContext.createMemo,
+                batch: parentContext.batch,
+                createStore: parentContext.createStore
+            } : initialize();
             
-            // Use parent's reactive context if available, otherwise create new one
-            let reactiveContext;
-            if (parentContext) {
-                // Share parent's reactive context
-                reactiveContext = {
-                    createSignal: parentContext.createSignal,
-                    createEffect: parentContext.createEffect,
-                    createMemo: parentContext.createMemo,
-                    batch: parentContext.batch
-                };
-            } else {
-                // Create new isolated reactivity context for root component
-                reactiveContext = initialize();
-            }
-            
-            const { createSignal, createEffect, createMemo, batch } = reactiveContext;
-            
+            const { createSignal, createEffect, createMemo, batch, createStore } = reactivity;
+
             // Parse and create the initial state with parent context
             const initialState = this.parseState(stateAttr, parentContext);
-            
-            let store, setStore;
-            if (parentContext) {
-                // Extend parent's store with child's state instead of creating separate store
-                store = parentContext.store;
-                setStore = parentContext.setStore;
-                
-                // Add child's properties to parent's store
-                Object.keys(initialState).forEach(key => {
-                    if (typeof initialState[key] === 'function') {
-                        // Add methods directly
-                        store[key] = initialState[key];
-                    } else {
-                        // For data properties, use setStore to make them reactive
-                        setStore(key, initialState[key]);
-                    }
-                });
-            } else {
-                // Create new store for root component
-                const { createStore } = reactiveContext;
-                [store, setStore] = createStore(initialState);
-            }
+
+            // Each component gets its own isolated store.
+            const [store, setStore] = createStore(initialState);
             
             // Add $parent reference to the store for this.$parent access
             if (parentContext) {
@@ -236,6 +212,7 @@ class Zust {
                 createSignal,
                 createEffect,
                 createMemo,
+                createStore, // Pass createStore down to children
                 batch,
                 zustInstance: this,
                 parent: parentContext,
@@ -245,13 +222,18 @@ class Zust {
             // Store the context
             this.components.set(element, context);
 
-
-
             // Batch the initial directive processing to prevent multiple effect executions
             batch(() => {
                 // Process all directives on this element and its descendants
                 this.processDirectives(element, context);
             });
+
+            // After initialization, check for and run the init() method
+            if (typeof store.init === 'function') {
+                // Call init with the store as its `this` context.
+                // Using queueMicrotask ensures it runs after the initial render batch.
+                queueMicrotask(() => store.init.call(store));
+            }
 
         } catch (error) {
             console.error(`Failed to initialize component on element:`, element, error);
