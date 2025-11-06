@@ -9,6 +9,7 @@ export { createBindDirective, bindValue, bindClass, bindStyle } from './directiv
 export { createOnDirective, onClick, onInput, onChange, onSubmit, onFocus, onBlur, onMouseover, onMouseout, onKeydown, onKeyup } from './directives/on';
 export { model } from './directives/model';
 export { forDirective } from './directives/for';
+export { lazy } from './directives/lazy';
 export { createIntersectDirective, intersectVisible, intersectInvisible } from './directives/intersect';
 
 // Export reactivity system

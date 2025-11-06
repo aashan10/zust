@@ -9,7 +9,11 @@
     "preview": "vite preview",
     "build:packages": "pnpm --filter='./packages/*' run build",
     "clean": "pnpm --filter='./packages/*' run clean",
-    "publish:packages": "pnpm --filter='./packages/*' publish"
+    "publish:packages": "pnpm --filter='./packages/*' publish",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@vitest/ui": "^4.0.7",
