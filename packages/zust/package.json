@@ -1,5 +1,5 @@
 {
-  "name": "zust",
+  "name": "@zust/zust",
   "version": "0.1.1",
   "description": "A minimalist, modern, and lightweight frontend framework with reactive, declarative behavior",
   "main": "./dist/index.cjs",
