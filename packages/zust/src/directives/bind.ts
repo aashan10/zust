@@ -2,27 +2,22 @@ import type { DirectiveHandler } from '../zust';
 
 export const createBindDirective = (attributeName: string): DirectiveHandler => {
     return (element, value, context) => {
-        const { createEffect } = context;
+        const { createEffect, evaluate } = context;
         
         return createEffect(() => {
-            try {
-                const func = new Function('$store', `with($store) { return ${value}; }`);
-                const result = func.call(context.store, context.store);
-                
-                // Handle different attribute types
-                switch (attributeName) {
-                    case 'class':
-                        handleClassBinding(element, result);
-                        break;
-                    case 'style':
-                        handleStyleBinding(element, result);
-                        break;
-                    default:
-                        handleGenericAttribute(element, attributeName, result);
-                        break;
-                }
-            } catch (error) {
-                console.error(`Error in bind:${attributeName} directive for expression "${value}":`, error);
+            const result = evaluate(value);
+            
+            // Handle different attribute types
+            switch (attributeName) {
+                case 'class':
+                    handleClassBinding(element, result);
+                    break;
+                case 'style':
+                    handleStyleBinding(element, result);
+                    break;
+                default:
+                    handleGenericAttribute(element, attributeName, result);
+                    break;
             }
         });
     };

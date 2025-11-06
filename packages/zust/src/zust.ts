@@ -27,16 +27,22 @@ interface ComponentContext {
     createMemo: any;
     batch: any;
     zustInstance: Zust;
+    parent?: ComponentContext;
+    evaluate: (expression: string, additionalParams?: Record<string, any>) => any;
 }
 
 class Zust {
-    private prefix: string;
+    private _prefix: string;
     private directives: Map<string, DirectiveDefinition> = new Map();
     private components: WeakMap<HTMLElement, ComponentContext> = new WeakMap();
     private observer: MutationObserver;
 
+    get prefix(): string {
+        return this._prefix;
+    }
+
     constructor(prefix: string = 'z') {
-        this.prefix = prefix;
+        this._prefix = prefix;
         this.setupMutationObserver();
         this.registerBuiltinDirectives();
         // Don't scan immediately - let external directives be registered first
@@ -82,6 +88,21 @@ class Zust {
         return undefined;
     }
 
+    /**
+     * Get the parent component context for an element
+     */
+    private getParentContext(element: HTMLElement): ComponentContext | undefined {
+        // Walk up the DOM tree to find the nearest parent component
+        let current: HTMLElement | null = element.parentElement;
+        while (current) {
+            if (this.components.has(current)) {
+                return this.components.get(current);
+            }
+            current = current.parentElement;
+        }
+        return undefined;
+    }
+
     private setupMutationObserver(): void {
         this.observer = new MutationObserver((mutations) => {
             for (const mutation of mutations) {
@@ -112,7 +133,7 @@ class Zust {
         }
 
         // Scan all descendants for components
-        const components = root.querySelectorAll(`[${this.prefix}-state]`);
+        const components = root.querySelectorAll(`[${this._prefix}-state]`);
         components.forEach((element) => {
             if (element instanceof HTMLElement) {
                 this.initializeComponent(element);
@@ -121,7 +142,7 @@ class Zust {
     }
 
     private isComponent(element: HTMLElement): boolean {
-        return element.hasAttribute(`${this.prefix}-state`);
+        return element.hasAttribute(`${this._prefix}-state`);
     }
 
     private initializeComponent(element: HTMLElement): void {
@@ -130,7 +151,7 @@ class Zust {
             return;
         }
 
-        const stateAttr = element.getAttribute(`${this.prefix}-state`);
+        const stateAttr = element.getAttribute(`${this._prefix}-state`);
         if (!stateAttr) {
             return;
         }
@@ -138,12 +159,74 @@ class Zust {
 
 
         try {
-            // Create isolated reactivity context for this component
-            const { createSignal, createEffect, createMemo, createStore, batch } = initialize();
+            // Find parent component context first
+            const parentContext = this.getParentContext(element);
+            
+            // Use parent's reactive context if available, otherwise create new one
+            let reactiveContext;
+            if (parentContext) {
+                // Share parent's reactive context
+                reactiveContext = {
+                    createSignal: parentContext.createSignal,
+                    createEffect: parentContext.createEffect,
+                    createMemo: parentContext.createMemo,
+                    batch: parentContext.batch
+                };
+            } else {
+                // Create new isolated reactivity context for root component
+                reactiveContext = initialize();
+            }
+            
+            const { createSignal, createEffect, createMemo, batch } = reactiveContext;
+            
+            // Parse and create the initial state with parent context
+            const initialState = this.parseState(stateAttr, parentContext);
+            
+            let store, setStore;
+            if (parentContext) {
+                // Extend parent's store with child's state instead of creating separate store
+                store = parentContext.store;
+                setStore = parentContext.setStore;
+                
+                // Add child's properties to parent's store
+                Object.keys(initialState).forEach(key => {
+                    if (typeof initialState[key] === 'function') {
+                        // Add methods directly
+                        store[key] = initialState[key];
+                    } else {
+                        // For data properties, use setStore to make them reactive
+                        setStore(key, initialState[key]);
+                    }
+                });
+            } else {
+                // Create new store for root component
+                const { createStore } = reactiveContext;
+                [store, setStore] = createStore(initialState);
+            }
+            
+            // Add $parent reference to the store for this.$parent access
+            if (parentContext) {
+                Object.defineProperty(store, '$parent', {
+                    get: () => parentContext.store,
+                    enumerable: false,
+                    configurable: true
+                });
+            }
 
-            // Parse and create the initial state
-            const initialState = this.parseState(stateAttr);
-            const [store, setStore] = createStore(initialState);
+            // Create evaluate function for this context
+            const evaluate = (expression: string, additionalParams: Record<string, any> = {}) => {
+                try {
+                    // Build parameter list: always include $store, $parent, plus any additional params
+                    const paramNames = ['$store', '$parent', ...Object.keys(additionalParams)];
+                    const paramValues = [store, parentContext?.store, ...Object.values(additionalParams)];
+                    
+                    const func = new Function(...paramNames, `with($store) { return ${expression}; }`);
+                    return func.call(store, ...paramValues);
+                } catch (error) {
+                    console.error(`Error evaluating expression "${expression}":`, error);
+                    return undefined;
+                }
+            };
 
             // Create component context
             const context: ComponentContext = {
@@ -154,7 +237,9 @@ class Zust {
                 createEffect,
                 createMemo,
                 batch,
-                zustInstance: this
+                zustInstance: this,
+                parent: parentContext,
+                evaluate
             };
 
             // Store the context
@@ -173,15 +258,56 @@ class Zust {
         }
     }
 
-    private parseState(stateString: string): any {
+    private parseState(stateString: string, parentContext?: ComponentContext): any {
         try {
-            // Create a safe evaluation context
-            const func = new Function('return ' + stateString);
-            return func();
+            // Pre-process state string to replace parent references with getters/setters
+            let processedStateString = stateString;
+            const parentBindings: { childProp: string, parentProp: string }[] = [];
+            
+            if (parentContext) {
+                // Find parent property references and collect them
+                const parentRefRegex = /(\w+):\s*\$parent\.(\w+)/g;
+                let match;
+                
+                while ((match = parentRefRegex.exec(stateString)) !== null) {
+                    const [fullMatch, childProp, parentProp] = match;
+                    parentBindings.push({ childProp, parentProp });
+                    
+                    // Replace the assignment with undefined for now
+                    processedStateString = processedStateString.replace(fullMatch, `${childProp}: undefined`);
+                }
+            }
+            
+            // Create a safe evaluation context with parent access
+            const func = new Function('$parent', 'return ' + processedStateString);
+            const initialState = func(parentContext?.store);
+            
+            // Now add the reactive parent bindings
+            if (parentContext && parentBindings.length > 0) {
+                this.createReactiveParentBindings(initialState, parentContext, parentBindings);
+            }
+            
+            return initialState;
         } catch (error) {
             console.error('Failed to parse state:', stateString, error);
             return {};
         }
+    }
+
+    private createReactiveParentBindings(state: any, parentContext: ComponentContext, bindings: { childProp: string, parentProp: string }[]): void {
+        bindings.forEach(({ childProp, parentProp }) => {
+            // Create getter/setter that always references parent property
+            Object.defineProperty(state, childProp, {
+                get() {
+                    return parentContext.store[parentProp];
+                },
+                set(value) {
+                    parentContext.setStore(parentProp, value);
+                },
+                enumerable: true,
+                configurable: true
+            });
+        });
     }
 
     processDirectives(element: HTMLElement, context: ComponentContext): () => void {
@@ -232,8 +358,8 @@ class Zust {
         }> = [];
         
         for (const attr of attributes) {
-            if (attr.name.startsWith(`${this.prefix}-`) && attr.name !== `${this.prefix}-state`) {
-                const directiveName = attr.name.substring(this.prefix.length + 1);
+            if (attr.name.startsWith(`${this._prefix}-`) && attr.name !== `${this._prefix}-state`) {
+                const directiveName = attr.name.substring(this._prefix.length + 1);
                 const directiveDefinition = this.directives.get(directiveName);
                 
                 if (directiveDefinition) {
@@ -312,7 +438,7 @@ class Zust {
                     batch(() => {
                         // Clone the original element and remove z-if
                         renderedElement = originalElement.cloneNode(true) as HTMLElement;
-                        renderedElement.removeAttribute(`${this.prefix}-if`);
+                        renderedElement.removeAttribute(`${this._prefix}-if`);
                         
                         // Insert the rendered element
                         parentElement.insertBefore(renderedElement, placeholder.nextSibling);
@@ -339,13 +465,12 @@ class Zust {
             
             // Create reactive effect to watch the condition
             return createEffect(() => {
-                try {
-                    const func = new Function('$store', `with($store) { return ${value}; }`);
-                    const shouldShow = func(context.store);
-                    
-
-                } catch (error) {
-                    console.error(`Error in z-if directive for expression "${value}":`, error);
+                const shouldShow = context.evaluate(value);
+                
+                if (shouldShow) {
+                    showElement();
+                } else {
+                    hideElement();
                 }
             });
         };
@@ -363,4 +488,4 @@ class Zust {
 } 
 
 export { Zust };
-export type { DirectiveHandler };
+export type { DirectiveHandler, ComponentContext };

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zust CDN Example</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 2rem; 
+            max-width: 800px; 
+        }
+        .card { 
+            border: 1px solid #ddd; 
+            padding: 1rem; 
+            margin: 1rem 0; 
+            border-radius: 4px; 
+            background: #f9f9f9;
+        }
+        .highlight { 
+            background: yellow; 
+            padding: 0.2rem;
+        }
+        button {
+            padding: 0.5rem 1rem;
+            margin: 0.25rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+        }
+        button:hover { background: #f0f0f0; }
+        input, select {
+            padding: 0.5rem;
+            margin: 0.25rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 Zust Framework - CDN Example</h1>
+    <p>This example loads Zust directly from a CDN and auto-starts the framework.</p>
+
+    <!-- Simple Counter Component -->
+    <div class="card" z-state="{ count: 0 }">
+        <h2>💯 Counter: <span z-text="count"></span></h2>
+        <button z-on:click="count--">➖ Decrement</button>
+        <button z-on:click="count++">➕ Increment</button>
+        <button z-on:click="count = 0">🔄 Reset</button>
+        <p z-show="count > 5" class="highlight">🎉 Count is greater than 5!</p>
+        <p z-show="count < 0" class="highlight">⚠️ Count is negative!</p>
+    </div>
+
+    <!-- Form Example -->
+    <div class="card" z-state="{
+        form: { 
+            name: '', 
+            email: '', 
+            subscribe: false,
+            theme: 'light'
+        },
+        submit() {
+            alert('Form submitted!\\n' + JSON.stringify(this.form, null, 2));
+        }
+    }">
+        <h2>📝 Form Example</h2>
+        <form z-on:submit="submit(); $event.preventDefault()">
+            <div>
+                <label>📛 Name: 
+                    <input z-model="form.name" type="text" placeholder="Enter your name">
+                </label>
+            </div>
+            <div>
+                <label>📧 Email: 
+                    <input z-model="form.email" type="email" placeholder="Enter your email">
+                </label>
+            </div>
+            <div>
+                <label>🎨 Theme: 
+                    <select z-model="form.theme">
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                        <option value="auto">Auto</option>
+                    </select>
+                </label>
+            </div>
+            <div>
+                <label>
+                    <input z-model="form.subscribe" type="checkbox">
+                    📬 Subscribe to newsletter
+                </label>
+            </div>
+            <button type="submit" z-bind:disabled="!form.name || !form.email">
+                🚀 Submit
+            </button>
+        </form>
+        
+        <h3>📊 Live Form Data:</h3>
+        <pre z-text="JSON.stringify(form, null, 2)" style="background: #f0f0f0; padding: 1rem; border-radius: 4px;"></pre>
+    </div>
+
+    <!-- Parent-Child Communication -->
+    <div class="card" z-state="{
+        theme: 'light',
+        notifications: 0,
+        user: { name: 'Alice', role: 'admin' },
+        notify() { this.notifications++; }
+    }">
+        <h2>🏘️ Parent Component</h2>
+        <p>🎨 Theme: <span z-text="theme"></span></p>
+        <p>🔔 Notifications: <span z-text="notifications"></span></p>
+        <p>👤 User: <span z-text="user.name"></span> (<span z-text="user.role"></span>)</p>
+        
+        <!-- Child Component -->
+        <div class="card" style="background: #e8f4fd;" z-state="{
+            message: 'Hello from child! 👶',
+            updateParent() {
+                $parent.theme = $parent.theme === 'light' ? 'dark' : 'light';
+                $parent.notify();
+                $parent.user.name = 'Bob';
+            }
+        }">
+            <h3>👶 Child Component</h3>
+            <p z-text="message"></p>
+            <p>Parent's theme from child: <span z-text="$parent.theme"></span></p>
+            <button z-on:click="updateParent()">🔄 Update Parent</button>
+            <button z-on:click="$parent.notifications = 0">🔕 Clear Notifications</button>
+        </div>
+    </div>
+
+    <!-- List Rendering -->
+    <div class="card" z-state="{
+        items: ['🍎 Apple', '🍌 Banana', '🍒 Cherry'],
+        newItem: '',
+        addItem() {
+            if (this.newItem.trim()) {
+                this.items.push(this.newItem);
+                this.newItem = '';
+            }
+        },
+        removeItem(index) {
+            this.items.splice(index, 1);
+        }
+    }">
+        <h2>📋 Dynamic List</h2>
+        <div>
+            <input z-model="newItem" placeholder="Add new item" z-on:keyup="if($event.key === 'Enter') addItem()">
+            <button z-on:click="addItem()" z-bind:disabled="!newItem.trim()">➕ Add</button>
+        </div>
+        
+        <ul>
+            <template z-for="(item, index) in items" z-key="index">
+                <li>
+                    <span z-text="item"></span>
+                    <button z-on:click="removeItem(index)" style="margin-left: 1rem;">🗑️ Remove</button>
+                </li>
+            </template>
+        </ul>
+        
+        <p>Total items: <span z-text="items.length"></span></p>
+    </div>
+
+    <!-- Intersection Observer -->
+    <div class="card" z-state="{
+        visibleCount: 0,
+        invisibleCount: 0
+    }">
+        <h2>👁️ Intersection Observer</h2>
+        <p>Visible triggers: <span z-text="visibleCount"></span></p>
+        <p>Invisible triggers: <span z-text="invisibleCount"></span></p>
+        
+        <div style="height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 1rem;">
+            <div style="height: 200px;">Scroll down to see the magic! ⬇️</div>
+            
+            <div z-intersect:visible="visibleCount++" 
+                 z-intersect:invisible="invisibleCount++"
+                 style="background: #ffe6e6; padding: 1rem; margin: 1rem 0; border-radius: 4px;">
+                🎯 I trigger events when I enter/leave the viewport!
+            </div>
+            
+            <div style="height: 200px;">Keep scrolling... ⬇️</div>
+            
+            <div z-intersect:visible="visibleCount++" 
+                 style="background: #e6f3ff; padding: 1rem; margin: 1rem 0; border-radius: 4px;">
+                🔍 I only trigger when visible!
+            </div>
+            
+            <div style="height: 200px;">More content here! 📝</div>
+        </div>
+    </div>
+
+    <!-- Load Zust from CDN -->
+    <script src="./dist/index.umd.min.js"></script>
+    
+    <!-- Zust auto-starts when loaded via CDN! -->
+    <script>
+        // Optional: Access the global zust instance for debugging
+        console.log('🚀 Zust loaded and started!', window.zust);
+        
+        // You can also access the Zust constructor
+        console.log('🏗️ Zust constructor:', window.Zust);
+    </script>
+</body>
+</html>

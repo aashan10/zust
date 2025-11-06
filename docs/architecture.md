@@ -1,42 +1,254 @@
-# Architecture Overview
+# Zust Architecture
 
-Zust is designed to be a simple yet powerful layer of reactivity on top of standard HTML. Its architecture is built on a few core concepts that work together to create a modern, declarative development experience.
+This document explains the internal architecture of Zust, including its reactivity system, component lifecycle, directive processing, and parent-child communication mechanisms.
 
-## Core Principles
+## Table of Contents
 
-1.  **HTML as the Source of Truth:** Zust embraces the HTML you write. Component state and behavior are defined directly within the markup, making it easy to understand what a piece of UI does just by reading the HTML.
+- [Overview](#overview)
+- [Reactivity System](#reactivity-system)
+- [Component Lifecycle](#component-lifecycle)
+- [Directive Processing](#directive-processing)
+- [Parent-Child Communication](#parent-child-communication)
+- [Expression Evaluation](#expression-evaluation)
+- [Performance Optimizations](#performance-optimizations)
 
-2.  **Component-Based Scoping:** Each element with a `z-state` attribute becomes the root of a new, self-contained component. The state and methods defined in `z-state` are only available to that element and its children, preventing complex state management issues.
+## Overview
 
-3.  **Reactivity through Directives:** Zust uses special HTML attributes called "directives" (e.g., `z-text`, `z-on:click`, `z-if`) to link your component's state to the DOM. These directives are the bridge between your data and what the user sees.
+Zust's architecture is built around several key principles:
 
-## The Initialization Process
+1. **Signal-Based Reactivity**: Fine-grained reactive updates using signals
+2. **Component Isolation**: Each `z-state` creates an isolated reactive scope
+3. **Directive System**: Modular, extensible directive processing
+4. **Parent-Child Communication**: Rich communication via `$parent` and state sharing
+5. **Generic Expression Evaluation**: Unified expression processing across all directives
 
-Understanding how Zust starts up is key to understanding its architecture.
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                           Zust Framework                        │
+├─────────────────────────────────────────────────────────────────┤
+│  DOM Scanner  │  Component Manager  │  Directive Processor    │
+├─────────────────────────────────────────────────────────────────┤
+│                    Reactivity Engine                            │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐ │
+│  │   Signals   │  │   Effects   │  │     Store Management    │ │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘ │
+├─────────────────────────────────────────────────────────────────┤
+│                   Expression Evaluator                         │
+│            (Generic evaluation with magic variables)            │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-1.  **Instantiation:** A global `Zust` instance is created. This instance holds the registered directives and manages all components.
+## Reactivity System
 
-2.  **DOM Scan:** When `zust.start()` is called (typically on `DOMContentLoaded`), the instance scans the entire `<body>` for elements containing the `z-state` attribute.
+### Signal-Based Updates
 
-3.  **Component Initialization:** For each `z-state` element found, Zust performs the following steps:
-    a.  It parses the state object defined in the attribute.
-    b.  It creates a new, isolated reactive store for that component using a deep Proxy object. This ensures that any change to the state, no matter how nested, can be tracked.
-    c.  It creates a `ComponentContext` object, which holds the reactive store and other utilities.
-    d.  It recursively processes all directives on the component element and its children, linking them to the component's reactive store.
+Zust uses a signal-based reactivity system where:
 
-## Dynamic Content
+1. **Signals** hold reactive values
+2. **Effects** subscribe to signals and run when dependencies change
+3. **Stores** manage component state with automatic signal creation
 
-Zust is not limited to the initial page load. It uses a `MutationObserver` to watch for changes to the DOM. If new nodes are added to the document (for example, via an AJAX call or another library), Zust will automatically scan them for new `z-state` components and initialize them, making the entire system dynamic and interoperable.
+```typescript
+// Simplified reactivity flow
+const [signal, setSignal] = createSignal(0);
 
-## The Data Flow
+createEffect(() => {
+    console.log('Signal value:', signal()); // Subscribes to signal
+});
 
-The flow of data in a Zust component is unidirectional and easy to follow:
+setSignal(5); // Triggers effect to run
+```
 
-1.  **User Interaction:** A user interacts with an element, triggering a DOM event (e.g., a `click`).
-2.  **Event Handler:** A `z-on` directive catches the event and executes an expression, which typically modifies the component's state (e.g., `count++`).
-3.  **State Mutation:** The state change is intercepted by the component's reactive Proxy store.
-4.  **Notification:** The proxy notifies the underlying reactivity engine that a specific piece of state has changed.
-5.  **Effect Execution:** The reactivity engine identifies all the effects (created by directives like `z-text`, `z-bind`, etc.) that depend on that specific piece of state and re-executes them.
-6.  **DOM Update:** The effect handlers update the DOM to reflect the new state.
+### Store Creation
 
-This architecture ensures that updates are efficient and predictable. Only the parts of the DOM that absolutely need to change are touched.
+Each component gets its own reactive store:
+
+```typescript
+// Component state becomes reactive
+const [store, setStore] = createStore({ 
+    count: 0,        // Becomes signal
+    user: { ... },   // Nested objects become reactive
+    increment() { this.count++; }  // Methods have access to reactive 'this'
+});
+```
+
+### Computed Properties (Getters)
+
+Getters automatically become computed properties:
+
+```typescript
+const [store] = createStore({
+    firstName: 'John',
+    lastName: 'Doe',
+    
+    // Automatically recomputes when firstName or lastName changes
+    get fullName() {
+        return `${this.firstName} ${this.lastName}`;
+    }
+});
+```
+
+## Component Lifecycle
+
+### 1. Discovery Phase
+
+The Zust instance scans the DOM for `z-state` attributes:
+
+```typescript
+class Zust {
+    scanDocument() {
+        const elements = document.querySelectorAll(`[${this.prefix}-state]`);
+        elements.forEach(element => this.initializeComponent(element));
+    }
+}
+```
+
+### 2. Component Initialization
+
+For each component:
+
+1. **Parse State**: Convert `z-state` attribute to JavaScript object
+2. **Find Parent**: Locate parent component context
+3. **Create Reactive Context**: Initialize signals, effects, and store
+4. **Create Evaluation Function**: Build expression evaluator with access to `$parent`
+5. **Process Directives**: Initialize all directives on component and children
+
+## Directive Processing
+
+### Directive Registration
+
+Directives are registered with the framework:
+
+```typescript
+class Zust {
+    directive(name: string, handler: DirectiveHandler, priority: number = 50): void {
+        this.directives.set(name, { handler, priority });
+    }
+}
+
+// Register built-in directives
+zust.directive('text', textDirective);
+zust.directive('on:click', onClickDirective);
+zust.directive('bind:class', bindClassDirective);
+```
+
+### Generic Directive Handler
+
+All directives receive the same signature:
+
+```typescript
+type DirectiveHandler = (
+    element: HTMLElement, 
+    value: string,           // Directive expression
+    context: ComponentContext // Component context with evaluate function
+) => void | (() => void);    // Optional cleanup function
+
+// Example directive
+const textDirective: DirectiveHandler = (element, value, context) => {
+    const { createEffect, evaluate } = context;
+    
+    return createEffect(() => {
+        const result = evaluate(value);
+        element.textContent = String(result ?? '');
+    });
+};
+```
+
+## Parent-Child Communication
+
+### Context Hierarchy
+
+Components form a hierarchy based on DOM nesting:
+
+```html
+<!-- Root Component -->
+<div z-state="{ rootData: 'root' }">         <!-- Level 0 -->
+    <div z-state="{ childData: 'child' }">   <!-- Level 1 -->
+        <div z-state="{ grandData: 'grand' }"> <!-- Level 2 -->
+            <!-- Can access parent (Level 1) via $parent -->
+        </div>
+    </div>
+</div>
+```
+
+### Shared Reactive Context
+
+Child components inherit parent reactive context ensuring that effects in child components run in the same reactive context, state changes in parent trigger child effects, and batching works across parent and child.
+
+## Expression Evaluation
+
+### Generic Evaluate Function
+
+All directives use a unified expression evaluation system:
+
+```typescript
+const evaluate = (expression: string, additionalParams: Record<string, any> = {}) => {
+    try {
+        // Build parameter list: always include $store, $parent, plus additional params
+        const paramNames = ['$store', '$parent', ...Object.keys(additionalParams)];
+        const paramValues = [store, parentContext?.store, ...Object.values(additionalParams)];
+        
+        const func = new Function(...paramNames, `with($store) { return ${expression}; }`);
+        return func.call(store, ...paramValues);
+    } catch (error) {
+        console.error(`Error evaluating expression "${expression}":`, error);
+        return undefined;
+    }
+};
+```
+
+### Magic Variables
+
+The evaluation context includes several magic variables:
+
+- **`$store`**: Current component's state
+- **`$parent`**: Parent component's state  
+- **`$event`**: DOM event (in event handlers)
+- **`$element`**: Current DOM element (in intersection observers)
+
+## Performance Optimizations
+
+### 1. Fine-Grained Reactivity
+
+Only affected DOM elements update when state changes:
+
+```html
+<div z-state="{ firstName: 'John', lastName: 'Doe' }">
+    <span z-text="firstName"></span>  <!-- Only updates when firstName changes -->
+    <span z-text="lastName"></span>   <!-- Only updates when lastName changes -->
+    <span z-text="`${firstName} ${lastName}`"></span>  <!-- Updates when either changes -->
+</div>
+```
+
+### 2. Automatic Batching
+
+Multiple state changes in the same tick are batched automatically.
+
+### 3. Efficient List Updates
+
+`z-key` enables efficient list reconciliation where elements are reused when possible, only changed items trigger updates, and proper ordering is maintained during reorders.
+
+### 4. Lazy Component Initialization
+
+Components are only initialized when their DOM elements are discovered with no upfront parsing of entire document, components can be added dynamically, and memory usage scales with active components.
+
+## Extension Points
+
+### Custom Directives
+
+Create new directives by implementing the `DirectiveHandler` interface:
+
+```typescript
+const myDirective: DirectiveHandler = (element, value, context) => {
+    const { evaluate, createEffect } = context;
+    
+    return createEffect(() => {
+        const result = evaluate(value);
+        // Custom logic here
+    });
+};
+
+zust.directive('my-directive', myDirective);
+```
+
+This architecture provides a solid foundation for building reactive web applications while maintaining simplicity and performance.

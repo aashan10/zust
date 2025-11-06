@@ -42,32 +42,45 @@ export const forDirective: DirectiveHandler = (element, value, context) => {
     const createScopedContext = (item: any, index: number): ComponentContext => {
         const scope = { [itemVar]: item, [indexVar]: index };
         const storeWithScope = new Proxy(context.store, {
-            get: (target, prop, receiver) => (prop in scope ? scope[prop] : Reflect.get(target, prop, receiver)),
+            get: (target, prop, receiver) => (prop in scope ? scope[prop as string] : Reflect.get(target, prop, receiver)),
             set: (target, prop, value, receiver) => (prop in scope ? false : Reflect.set(target, prop, value, receiver)),
             has: (target, prop) => (prop in scope || Reflect.has(target, prop)),
             ownKeys: (target) => [...Object.keys(scope), ...Reflect.ownKeys(target)],
             getOwnPropertyDescriptor: (target, prop) => (
                 prop in scope
-                    ? { value: scope[prop], writable: true, enumerable: true, configurable: true }
+                    ? { value: scope[prop as string], writable: true, enumerable: true, configurable: true }
                     : Reflect.getOwnPropertyDescriptor(target, prop)
             ),
         });
-        return { ...context, store: storeWithScope };
+        
+        // Create a new evaluate function that includes scoped variables
+        const evaluate = (expression: string, additionalParams: Record<string, any> = {}) => {
+            try {
+                // Merge scope variables with additional params
+                const allParams = { ...scope, ...additionalParams };
+                const paramNames = ['$store', '$parent', ...Object.keys(allParams)];
+                const paramValues = [storeWithScope, context.parent?.store, ...Object.values(allParams)];
+                
+                const func = new Function(...paramNames, `with($store) { return ${expression}; }`);
+                return func.call(storeWithScope, ...paramValues);
+            } catch (error) {
+                console.error(`Error evaluating expression "${expression}":`, error);
+                return undefined;
+            }
+        };
+        
+        return { ...context, store: storeWithScope, evaluate };
     };
 
     const getItemKey = (scopedContext: ComponentContext, index: number) => {
         if (keyExpr) {
-            try {
-                return new Function('$store', `with($store) { return ${keyExpr}; }`).call(scopedContext.store, scopedContext.store);
-            } catch (e) {
-                console.warn(`Error evaluating z-key expression "${keyExpr}"`, e);
-            }
+            return scopedContext.evaluate(keyExpr) ?? index;
         }
         return index;
     };
 
     return createEffect(() => {
-        const items = new Function('$store', `with($store) { return ${itemsExpr}; }`).call(context.store, context.store);
+        const items = context.evaluate(itemsExpr);
         if (!Array.isArray(items)) {
             console.warn(`z-for expression "${itemsExpr}" did not return an array.`);
             return;

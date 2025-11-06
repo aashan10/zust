@@ -2,17 +2,13 @@ import type { DirectiveHandler } from '../zust';
 
 export const createOnDirective = (eventType: string): DirectiveHandler => {
     return (element, value, context) => {
+        const { batch, evaluate } = context;
+        
         const handleEvent = (event: Event) => {
-            try {
-                // Batch all effects that result from this event handler
-                context.batch(() => {
-                    // Create function with event and store in scope
-                    const func = new Function('$event', '$store', `with($store) { return ${value}; }`);
-                    func.call(context.store, event, context.store);
-                });
-            } catch (error) {
-                console.error(`Error in on:${eventType} directive for expression "${value}":`, error);
-            }
+            // Batch all effects that result from this event handler
+            batch(() => {
+                evaluate(value, { $event: event });
+            });
         };
         
         element.addEventListener(eventType, handleEvent);

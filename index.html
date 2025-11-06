@@ -553,6 +553,89 @@
         </style>
     </div>
 
+    <!-- Intersection Observer Demo -->
+    <div class="component" z-state="{
+        visibleCount: 0,
+        invisibleCount: 0,
+        status: 'Not yet visible',
+        setVisible() {
+            this.visibleCount++;
+            this.status = 'Mom, I\'m visible';
+        },
+        setInvisible() {
+            this.invisibleCount++;
+            this.status = 'Look who\'s invisible!';
+        },
+    }">
+        <h2>Intersection Observer Demo</h2>
+        <p>Scroll down to see the intersection observer in action!</p>
+
+        <div
+            style="height: 100vh; background: #f1f5f9; display: flex; align-items: center; justify-content: center; margin: 2rem 0;">
+            <p style="font-size: 1.2rem; color: #64748b;">↓ Scroll down to trigger intersection ↓</p>
+        </div>
+
+        <div style="background: #dbeafe; border: 2px solid #3b82f6; padding: 2rem; margin: 2rem 0; text-align: center;"
+            z-intersect:visible="setVisible()" z-intersect:invisible="setInvisible()">
+            <h3>Watch me! 👀</h3>
+            <p z-text="status"></p>
+            <p>Visible count: <span z-text="visibleCount"></span></p>
+            <p>Invisible count: <span z-text="invisibleCount"></span></p>
+        </div>
+
+        <div style="height: 100vh; background: #f1f5f9; display: flex; align-items: center; justify-content: center;">
+            <p style="font-size: 1.2rem; color: #64748b;">Keep scrolling to test invisible trigger ↓</p>
+        </div>
+    </div>
+
+    <!-- Parent-Child Component Demo -->
+    <div class="component" z-state="{
+        counter: 0,
+        increment() { 
+            this.counter++; 
+        },
+        decrement() { 
+            this.counter--; 
+        }
+    }">
+        <h2>Parent-Child Component Demo</h2>
+        <p>Parent counter: <span z-text="counter"></span></p>
+        <button z-on:click="increment()">Increment Parent</button>
+        <button z-on:click="decrement()">Decrement Parent</button>
+        
+        <!-- Child Component with reactive reference sharing -->
+        <div style="border: 2px solid #10b981; border-radius: 8px; padding: 1.5rem; margin: 1rem 0; background: #f0fdf4;" z-state="{
+            counter: $parent.counter,
+            incrementTwo() { 
+                this.counter += 2; 
+            },
+            decrementTwo() {
+                this.counter -= 2;
+            },
+            incrementChildOnly() {
+                this.counter++;
+            }
+        }">
+            <h3>Child Component (Reactive Reference Sharing)</h3>
+            <p>Child counter (reference to parent): <span z-text="counter"></span></p>
+            <p>Parent counter (direct): <span z-text="$parent.counter"></span></p>
+            
+            <button z-on:click="incrementTwo()" style="background: #10b981;">Add 2 via Child Counter</button>
+            <button z-on:click="decrementTwo()" style="background: #ef4444;">Subtract 2 via Child Counter</button>
+            <button z-on:click="incrementChildOnly()" style="background: #8b5cf6;">Increment via Child Counter</button>
+            
+            <!-- Show both counters are always in sync -->
+            <div style="margin-top: 1rem; padding: 1rem; background: #e0f2fe; border-radius: 4px;">
+                <p><strong>✨ Magic:</strong> Child counter is always the same as parent counter!</p>
+                <p>Child: <span z-text="counter"></span> | Parent: <span z-text="$parent.counter"></span></p>
+                <p style="color: #10b981;">✓ Counters are always in perfect sync</p>
+                <p style="color: #64748b; font-size: 0.9rem;">
+                    Modifying child.counter directly modifies parent.counter
+                </p>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="/index.ts"></script>
 </body>
 

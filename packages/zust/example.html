@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zust Example</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; }
+        .hidden { display: none; }
+        .highlight { background: yellow; }
+        .card { border: 1px solid #ddd; padding: 1rem; margin: 1rem 0; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>Zust Framework Example</h1>
+
+    <!-- Simple Counter Component -->
+    <div class="card" z-state="{ count: 0 }">
+        <h2>Counter: <span z-text="count"></span></h2>
+        <button z-on:click="count--">-</button>
+        <button z-on:click="count++">+</button>
+        <p z-show="count > 5">Count is greater than 5!</p>
+    </div>
+
+    <!-- Parent-Child Communication -->
+    <div class="card" z-state="{
+        theme: 'light',
+        user: { name: 'Alice', role: 'admin' },
+        toggleTheme() { this.theme = this.theme === 'light' ? 'dark' : 'light'; }
+    }">
+        <h2>Parent Component</h2>
+        <p>Theme: <span z-text="theme"></span></p>
+        <p>User: <span z-text="user.name"></span> (<span z-text="user.role"></span>)</p>
+        
+        <!-- Child Component -->
+        <div class="card" z-state="{
+            message: 'Hello from child!',
+            changeParent() {
+                $parent.user.name = 'Bob';
+                $parent.toggleTheme();
+            }
+        }">
+            <h3>Child Component</h3>
+            <p z-text="message"></p>
+            <p>Parent theme from child: <span z-text="$parent.theme"></span></p>
+            <button z-on:click="changeParent()">Change Parent Data</button>
+        </div>
+    </div>
+
+    <!-- Form Example -->
+    <div class="card" z-state="{
+        form: { name: '', email: '', subscribe: false },
+        submit() {
+            alert('Form submitted: ' + JSON.stringify(this.form));
+        }
+    }">
+        <h2>Form Example</h2>
+        <form z-on:submit="submit(); $event.preventDefault()">
+            <div>
+                <label>Name: <input z-model="form.name" type="text"></label>
+            </div>
+            <div>
+                <label>Email: <input z-model="form.email" type="email"></label>
+            </div>
+            <div>
+                <label>
+                    <input z-model="form.subscribe" type="checkbox">
+                    Subscribe to newsletter
+                </label>
+            </div>
+            <button type="submit">Submit</button>
+        </form>
+        <pre z-text="JSON.stringify(form, null, 2)"></pre>
+    </div>
+
+    <script type="module">
+        // Use the default instance that comes pre-configured
+        import zust from './dist/index.mjs';
+        
+        // Start the framework
+        zust.start();
+    </script>
+</body>
+</html>

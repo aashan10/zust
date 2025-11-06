@@ -61,9 +61,9 @@ export const model: DirectiveHandler = (element, value, context) => {
         
         try {
             // Use a function to perform the assignment, allowing it to work with loop variables.
-            const setter = new Function('$store', '$value', `with($store) { ${value} = $value }`);
+            const setter = new Function('$store', '$value', '$parent', `with($store) { ${value} = $value }`);
             context.batch(() => {
-                setter.call(context.store, context.store, newValue);
+                setter.call(context.store, context.store, newValue, context.parent?.store);
             });
         } catch (error) {
             console.error(`Error updating model for path "${value}":`, error);
@@ -79,17 +79,12 @@ export const model: DirectiveHandler = (element, value, context) => {
     
     // Create effect to sync store changes back to element
     const cleanup = createEffect(() => {
-        try {
-            const func = new Function('$store', `with($store) { return ${value}; }`);
-            const storeValue = func(context.store);
-            
-            // Only update if the value is different to avoid infinite loops
-            const currentValue = getElementValue();
-            if (currentValue !== storeValue) {
-                setElementValue(storeValue);
-            }
-        } catch (error) {
-            console.error(`Error in model directive for expression "${value}":`, error);
+        const storeValue = context.evaluate(value);
+        
+        // Only update if the value is different to avoid infinite loops
+        const currentValue = getElementValue();
+        if (currentValue !== storeValue) {
+            setElementValue(storeValue);
         }
     });
     

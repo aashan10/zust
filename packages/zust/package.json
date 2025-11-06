@@ -1,0 +1,64 @@
+{
+  "name": "zust",
+  "version": "0.1.0",
+  "description": "A minimalist, modern, and lightweight frontend framework with reactive, declarative behavior",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "unpkg": "./dist/index.umd.min.js",
+  "jsdelivr": "./dist/index.umd.min.js",
+  "cdn": "./dist/index.umd.min.js",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "frontend",
+    "framework",
+    "reactive",
+    "declarative",
+    "signals",
+    "typescript",
+    "javascript",
+    "dom",
+    "alpine",
+    "solid",
+    "cdn",
+    "umd",
+    "zero-build"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "homepage": "https://github.com/yourusername/zust",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/zust.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/zust/issues"
+  },
+  "peerDependencies": {},
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
