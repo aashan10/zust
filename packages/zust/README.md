@@ -50,14 +50,14 @@ npm install zust
     </div>
 
     <!-- Zust auto-starts when loaded via CDN -->
-    <script src="https://unpkg.com/zust@latest/dist/index.umd.min.js"></script>
+    <script src="https://unpkg.com/@zust/zust@latest/dist/index.esm.min.js"></script>
 </body>
 </html>
 ```
 
 **CDN Options:**
-- **unpkg**: `https://unpkg.com/zust@latest/dist/index.umd.min.js`
-- **jsDelivr**: `https://cdn.jsdelivr.net/npm/zust@latest/dist/index.umd.min.js`
+- **unpkg**: `https://unpkg.com/@zust/zust@latest/dist/index.esm.min.js`
+- **jsDelivr**: `https://cdn.jsdelivr.net/npm/@zust/zust@latest/dist/index.esm.min.js`
 
 ## 📖 Core Concepts
 
