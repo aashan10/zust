@@ -12,8 +12,16 @@
     "publish:packages": "pnpm --filter='./packages/*' publish"
   },
   "devDependencies": {
+    "@vitest/ui": "^4.0.7",
+    "happy-dom": "^20.0.10",
+    "jsdom": "^27.1.0",
+    "tsup": "^8.0.0",
     "typescript": "~5.9.3",
     "vite": "^7.1.7",
-    "tsup": "^8.0.0"
+    "vitest": "^4.0.7"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.16",
+    "tailwindcss": "^4.1.16"
   }
 }
