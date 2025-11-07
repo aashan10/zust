@@ -1,6 +1,6 @@
 {
   "name": "@zust/zust",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "A minimalist, modern, and lightweight frontend framework with reactive, declarative behavior",
   "type": "module",
   "main": "./dist/index.js",

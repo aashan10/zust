@@ -18,7 +18,7 @@ Zust is a minimalist, modern, and lightweight frontend framework that brings rea
 ### Option 1: NPM Installation
 
 ```bash
-npm install zust
+npm install @zust/zust
 ```
 
 ```html
@@ -31,7 +31,7 @@ npm install zust
     </div>
 
     <script type="module">
-        import zust from 'zust';
+        import zust from '@zust/zust';
         zust.start();
     </script>
 </body>
@@ -385,6 +385,35 @@ Trigger actions when elements enter or leave the viewport:
 ```
 
 ## 🔧 Advanced Usage
+
+### Creating Custom Zust Instances
+
+For advanced use cases, you can create custom Zust instances with different prefixes or custom directives:
+
+```javascript
+import { Zust } from '@zust/zust';
+
+// Create a custom instance with different prefix
+const myFramework = new Zust('my');
+
+// Register custom directives
+myFramework.directive('highlight', (element, value, context) => {
+    return context.createEffect(() => {
+        const shouldHighlight = context.evaluate(value);
+        element.style.backgroundColor = shouldHighlight ? 'yellow' : '';
+    });
+});
+
+// Start the custom instance
+myFramework.start();
+```
+
+```html
+<!-- Now use your custom prefix -->
+<div my-state="{ isImportant: true }">
+    <p my-highlight="isImportant">This text will be highlighted!</p>
+</div>
+```
 
 ### Custom Methods and Computed Properties
 

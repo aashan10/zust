@@ -1,4 +1,12 @@
 import { initialize } from './reactivity';
+import { text } from './directives/text';
+import { show } from './directives/show';
+import { createBindDirective, bindValue, bindClass, bindStyle, bindSrc, bindAlt, bindHref, bindTitle, bindHidden, bindDisabled } from './directives/bind';
+import { clickOutside, createOnDirective } from './directives/on';
+import { model } from './directives/model';
+import { forDirective } from './directives/for';
+import { lazy } from './directives/lazy';
+import { intersectVisible, intersectInvisible } from './directives/intersect';
 
 type DirectiveHandler = (element: HTMLElement, value: string, context: ComponentContext) => void | (() => void);
 
@@ -53,10 +61,86 @@ class Zust {
      * Register built-in directives
      */
     private registerBuiltinDirectives(): void {
-        // Register z-if directive with high priority
+
+        // Register core directives
         this.directives.set('if', {
             handler: this.createIfDirective(),
             priority: DIRECTIVE_PRIORITIES.IF
+        });
+        
+        this.directives.set('for', {
+            handler: forDirective,
+            priority: DIRECTIVE_PRIORITIES.FOR
+        });
+        
+        this.directives.set('text', {
+            handler: text,
+            priority: DIRECTIVE_PRIORITIES.TEXT
+        });
+        
+        this.directives.set('show', {
+            handler: show,
+            priority: DIRECTIVE_PRIORITIES.SHOW
+        });
+        
+        this.directives.set('model', {
+            handler: model,
+            priority: DIRECTIVE_PRIORITIES.MODEL
+        });
+        
+        this.directives.set('lazy', {
+            handler: lazy,
+            priority: 50
+        });
+
+        // Register bind directives
+        this.directives.set('bind', {
+            handler: createBindDirective(''),
+            priority: DIRECTIVE_PRIORITIES.BIND
+        });
+        
+        const bindingTypes = {
+            value: bindValue,
+            class: bindClass,
+            style: bindStyle,
+            href: bindHref,
+            hidden: bindHidden,
+            alt: bindAlt,
+            title: bindTitle,
+            disabled: bindDisabled,
+            src: bindSrc,
+        };
+
+        Object.entries(bindingTypes).forEach(([type, handler]) => {
+            this.directives.set(`bind:${type}`, {
+                handler,
+                priority: DIRECTIVE_PRIORITIES.BIND
+            });
+        });
+
+        // Register event directives
+        const eventTypes = ['click', 'input', 'change', 'submit', 'focus', 'blur', 'mouseenter', 'mouseleave', 'mouseover', 'mouseout', 'keydown', 'keyup'];
+        eventTypes.forEach(eventType => {
+            this.directives.set(`on:${eventType}`, {
+                handler: createOnDirective(eventType),
+                priority: DIRECTIVE_PRIORITIES.ON
+            });
+        });
+
+        this.directives.set('on:click-outside', {
+            handler: clickOutside,
+            priority: DIRECTIVE_PRIORITIES.ON
+        });
+
+        // Register intersection observer directives
+        this.directives.set('intersect:visible', {
+            handler: intersectVisible,
+            priority: 50
+        });
+        
+        this.directives.set('intersect:invisible', {
+            handler: intersectInvisible,
+            priority: 50
         });
     }
 
